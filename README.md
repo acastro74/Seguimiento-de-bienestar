@@ -18,12 +18,17 @@ Los **hallazgos** comparan el promedio de un resultado entre los días en que cu
 
 ## Probarla en tu computador (modo demo)
 
-Requiere Node.js 20 o superior.
+Requiere [Node.js](https://nodejs.org) 20 o superior y git. En la Terminal:
 
 ```bash
+git clone https://github.com/acastro74/Seguimiento-de-bienestar.git
+cd Seguimiento-de-bienestar
+git checkout claude/eloquent-bohr-m4lcdf   # solo mientras el código no esté en main
 npm install
 npm run dev
 ```
+
+> Si aparece `npm error Missing script: "dev"`, la Terminal no está dentro de la carpeta del proyecto. Entra con `cd Seguimiento-de-bienestar` y vuelve a intentarlo. Si ya habías clonado el repositorio antes, entra a su carpeta y ejecuta `git fetch` antes del `git checkout`.
 
 Abre http://localhost:5173. Sin configurar Supabase, la app funciona en **modo demo**: los datos se guardan solo en ese navegador. Puedes cargar 60 días de datos de ejemplo para ver el dashboard lleno.
 
