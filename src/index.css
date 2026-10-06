@@ -1,0 +1,98 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Colores por área, tomados de la hoja "Seguimiento de Bienestar" */
+@theme {
+  --font-sans: 'Nunito', ui-rounded, system-ui, sans-serif;
+  --color-coral: #e5675b;
+  --color-sleep: #7d70d0;
+  --color-mood: #b47fd8;
+  --color-move: #4f9d78;
+  --color-care: #ec8650;
+  --color-food: #df6f9c;
+  --color-water: #4aa8dc;
+  --color-intake: #a87850;
+  --color-meds: #c99a2e;
+  --color-body: #5f86a3;
+  --color-cycle: #d9607f;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+}
+
+:root {
+  --bg: #fbf6f1;
+  --surface: #ffffff;
+  --surface-2: #f5efe9;
+  --ink: #2b2838;
+  --muted: #7a7489;
+  --line: #ebe3dc;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #15131c;
+  --surface: #201d2a;
+  --surface-2: #2a2636;
+  --ink: #f1edf7;
+  --muted: #a49db4;
+  --line: #353042;
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+@utility field {
+  @apply w-full rounded-xl border border-line bg-surface-2 px-3 py-2 text-ink outline-none transition focus:border-sleep focus:ring-2 focus:ring-sleep/25;
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 font-bold transition active:scale-[0.97] disabled:opacity-50;
+}
+@utility btn-primary {
+  @apply btn bg-sleep text-white shadow-sm hover:brightness-110;
+}
+@utility btn-ghost {
+  @apply btn bg-surface-2 text-ink hover:bg-line;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  html,
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+}
