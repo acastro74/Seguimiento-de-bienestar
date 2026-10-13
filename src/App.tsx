@@ -4,7 +4,8 @@ import { useRepoCtx } from '@/data/RepoProvider'
 import { useProfile } from '@/data/hooks'
 import { Spinner } from '@/components/ui'
 import { Shell } from '@/components/Shell'
-import { Login } from '@/features/auth/Login'
+import { AuthLayout, Login } from '@/features/auth/Login'
+import { PasswordForm } from '@/features/auth/NewPassword'
 import { Welcome } from '@/features/auth/Welcome'
 import { Onboarding } from '@/features/onboarding/Onboarding'
 import { Today } from '@/features/checkin/Today'
@@ -15,9 +16,17 @@ const Dashboard = lazy(() => import('@/features/dashboard/Dashboard').then((m) =
 const Reports = lazy(() => import('@/features/reports/Reports').then((m) => ({ default: m.Reports })))
 
 export default function App() {
-  const { repo, loading } = useRepoCtx()
+  const { repo, loading, recovering, finishRecovery } = useRepoCtx()
   if (loading) return <Spinner />
   if (!repo) return <Login />
+  if (recovering)
+    return (
+      <AuthLayout>
+        <h2 className="text-xl font-black">Crea tu nueva contraseña</h2>
+        <p className="mb-4 text-sm text-muted">Después seguirás directo a tu bitácora.</p>
+        <PasswordForm onDone={finishRecovery} />
+      </AuthLayout>
+    )
   return <Gate />
 }
 

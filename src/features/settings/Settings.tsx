@@ -1,5 +1,4 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import type { Profile } from '@/data/types'
 import { uid } from '@/data/defaults'
@@ -10,6 +9,8 @@ import { Segmented } from '@/components/ui'
 import { applyTheme, getTheme, type Theme } from '@/lib/theme'
 import { todayISO } from '@/lib/dates'
 import { GoalsEditor, HabitListEditor, MedListEditor, Toggle } from './editors'
+import { DataSection } from './DataSection'
+import { PasswordForm } from '@/features/auth/NewPassword'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -96,10 +97,7 @@ export function Settings() {
       </Section>
 
       <Section title="📤 Tus datos">
-        <p className="mb-3 text-sm text-muted">Exporta tus registros en PDF (para tu consulta) o CSV (para Excel).</p>
-        <Link to="/reportes" className="btn-ghost">
-          Ir a Reportes →
-        </Link>
+        <DataSection />
       </Section>
 
       <Section title="🔐 Cuenta">
@@ -112,7 +110,11 @@ export function Settings() {
               <button
                 className="btn-ghost"
                 onClick={() => {
-                  if (!confirm('Esto reemplaza tus datos actuales por 60 días de ejemplo. ¿Continuar?')) return
+                  const n = localRepo.countDays()
+                  const warn = n
+                    ? `⚠️ Esto BORRA tus ${n} días registrados y los reemplaza por 60 días de ejemplo. Si quieres conservarlos, primero usa "Descargar respaldo".\n\n¿Continuar?`
+                    : 'Se cargarán 60 días de ejemplo. ¿Continuar?'
+                  if (!confirm(warn)) return
                   localRepo.replaceAll(buildDemo(todayISO()))
                   qc.invalidateQueries()
                 }}
@@ -122,7 +124,7 @@ export function Settings() {
               <button
                 className="btn-ghost text-coral"
                 onClick={() => {
-                  if (confirm('¿Borrar todos los datos de este navegador?')) void signOut()
+                  if (confirm('¿Borrar TODOS los datos de este navegador? Esto no se puede deshacer (descarga un respaldo antes si quieres conservarlos).')) void signOut()
                 }}
               >
                 Borrar todo y empezar de nuevo
@@ -130,11 +132,21 @@ export function Settings() {
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-between gap-2 text-sm">
-            <span className="truncate text-muted">{email}</span>
-            <button className="btn-ghost" onClick={() => void signOut()}>
-              Cerrar sesión
-            </button>
+          <div className="space-y-4 text-sm">
+            <div className="flex items-center justify-between gap-2">
+              <span className="min-w-0 truncate">
+                Sesión iniciada como <b>{email}</b>
+              </span>
+              <button className="btn-ghost shrink-0" onClick={() => void signOut()}>
+                Cerrar sesión
+              </button>
+            </div>
+            <details className="rounded-2xl border border-line p-3">
+              <summary className="cursor-pointer font-bold">Cambiar contraseña</summary>
+              <div className="mt-3">
+                <PasswordForm submitLabel="Cambiar contraseña" />
+              </div>
+            </details>
           </div>
         )}
       </Section>

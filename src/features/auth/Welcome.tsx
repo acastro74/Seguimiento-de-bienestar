@@ -10,6 +10,8 @@ export function Welcome() {
   const qc = useQueryClient()
 
   const loadDemo = () => {
+    const n = localRepo.countDays()
+    if (n && !confirm(`⚠️ Este navegador tiene ${n} días registrados. Los datos de ejemplo los reemplazarán. ¿Continuar?`)) return
     localRepo.replaceAll(buildDemo(todayISO()))
     qc.invalidateQueries()
   }

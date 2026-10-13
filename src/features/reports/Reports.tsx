@@ -6,6 +6,7 @@ import { useDays, useHabits, useMedications, useProfileOrDefault } from '@/data/
 import { useRepo } from '@/data/RepoProvider'
 import { Segmented, Spinner } from '@/components/ui'
 import { dateRange, fmt, fromISO, shiftISO, toISO, todayISO } from '@/lib/dates'
+import { useToday } from '@/lib/useToday'
 import { sleepMetrics } from '@/lib/sleep'
 import { fmtNum, summarize } from '@/lib/stats'
 import { downloadFile, toCSV } from '@/lib/csv'
@@ -14,7 +15,8 @@ type Kind = 'semana' | 'mes'
 
 export function Reports() {
   const [kind, setKind] = useState<Kind>('semana')
-  const [anchor, setAnchor] = useState(todayISO())
+  const today = useToday()
+  const [anchor, setAnchor] = useState(today)
   const repo = useRepo()
   const from = toISO(kind === 'semana' ? startOfWeek(fromISO(anchor), { weekStartsOn: 1 }) : startOfMonth(fromISO(anchor)))
   const to = toISO(kind === 'semana' ? endOfWeek(fromISO(anchor), { weekStartsOn: 1 }) : endOfMonth(fromISO(anchor)))
@@ -56,7 +58,7 @@ export function Reports() {
               ‹
             </button>
             <span className="min-w-52 text-center text-sm font-bold first-letter:uppercase">{title}</span>
-            <button className="btn-ghost h-9 w-9 p-0" onClick={() => move(1)} disabled={to >= todayISO()} aria-label="Siguiente">
+            <button className="btn-ghost h-9 w-9 p-0" onClick={() => move(1)} disabled={to >= today} aria-label="Siguiente">
               ›
             </button>
           </div>

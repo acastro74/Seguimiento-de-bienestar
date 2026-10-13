@@ -1,14 +1,17 @@
+import { useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { ISODate } from '@/data/types'
 import { useDayEditor, useDays, useHabits, useMedications, usePreviousDay, useProfileOrDefault, type SaveStatus } from '@/data/hooks'
 import { Ring, Spinner, cx, AREA } from '@/components/ui'
-import { fmt, shiftISO, todayISO } from '@/lib/dates'
+import { fmt, shiftISO } from '@/lib/dates'
+import { useToday } from '@/lib/useToday'
 import { isLogged, sections } from '@/lib/stats'
 import { BodyCard, CareCard, CycleCard, ExerciseCard, IntakeCard, MealsCard, MedsCard, MoodCard, NoteCard, SleepCard, WaterCard } from './cards'
 
 export function Today() {
   const [params, setParams] = useSearchParams()
-  const today = todayISO()
+  // Se actualiza solo (medianoche, al volver a la pestaña): la app no se queda "pegada" en un día
+  const today = useToday()
   const raw = params.get('fecha')
   const date = raw && /^\d{4}-\d{2}-\d{2}$/.test(raw) && raw <= today ? raw : today
   const setDate = (d: ISODate) => setParams(d === today ? {} : { fecha: d }, { replace: true })
@@ -16,12 +19,22 @@ export function Today() {
   return (
     <div className="mx-auto max-w-xl">
       <DateStrip date={date} today={today} onChange={setDate} />
-      <DayForm key={date} date={date} />
+      {date !== today && (
+        <div className="mt-3 flex items-center gap-2 rounded-2xl border border-care/40 bg-care/10 px-3 py-2 text-sm">
+          <span className="min-w-0 flex-1">
+            Estás editando el <b>{fmt(date, "EEEE d 'de' MMMM")}</b>
+          </span>
+          <button className="btn-primary shrink-0 bg-care px-3 py-1 text-xs" onClick={() => setDate(today)}>
+            Ir a hoy
+          </button>
+        </div>
+      )}
+      <DayForm key={date} date={date} isToday={date === today} />
     </div>
   )
 }
 
-function DayForm({ date }: { date: ISODate }) {
+function DayForm({ date, isToday }: { date: ISODate; isToday: boolean }) {
   const profile = useProfileOrDefault()
   const habits = useHabits().data ?? []
   const meds = useMedications().data ?? []
@@ -46,7 +59,7 @@ function DayForm({ date }: { date: ISODate }) {
           </span>
         </Ring>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-bold text-muted">{date === todayISO() ? greeting : 'Editando registro'}</p>
+          <p className="text-xs font-bold text-muted">{isToday ? greeting : 'Editando registro'}</p>
           <h1 className="text-xl leading-tight font-black first-letter:uppercase">{fmt(date, "EEEE d 'de' MMMM")}</h1>
           <SaveBadge status={status} onRetry={retry} />
         </div>
@@ -128,6 +141,42 @@ function DateStrip({ date, today, onChange }: { date: ISODate; today: ISODate; o
       >
         ›
       </button>
+      <DatePicker date={date} today={today} onChange={onChange} />
+    </div>
+  )
+}
+
+/** Botón de calendario para saltar a cualquier día pasado. */
+function DatePicker({ date, today, onChange }: { date: ISODate; today: ISODate; onChange: (d: ISODate) => void }) {
+  const ref = useRef<HTMLInputElement>(null)
+  const open = () => {
+    const el = ref.current
+    if (!el) return
+    try {
+      el.showPicker()
+    } catch {
+      el.focus()
+      el.click()
+    }
+  }
+  return (
+    <div className="relative shrink-0">
+      <button className="grid h-9 w-9 place-items-center rounded-full text-base hover:bg-surface-2" onClick={open} aria-label="Elegir fecha">
+        📅
+      </button>
+      <input
+        ref={ref}
+        type="date"
+        aria-label="Fecha del registro"
+        tabIndex={-1}
+        className="pointer-events-none absolute inset-0 opacity-0"
+        value={date}
+        max={today}
+        onChange={(e) => {
+          const v = e.target.value
+          if (/^\d{4}-\d{2}-\d{2}$/.test(v) && v <= today) onChange(v)
+        }}
+      />
     </div>
   )
 }

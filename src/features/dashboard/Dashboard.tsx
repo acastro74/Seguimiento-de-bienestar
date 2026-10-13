@@ -5,7 +5,8 @@ import type { DayEntry, Habit, ISODate } from '@/data/types'
 import { EXERCISE_TYPES } from '@/data/defaults'
 import { useDays, useHabits, useProfileOrDefault } from '@/data/hooks'
 import { Ring, Segmented, Spinner, Empty, cx } from '@/components/ui'
-import { dateRange, fmt, shiftISO, todayISO } from '@/lib/dates'
+import { dateRange, fmt, shiftISO } from '@/lib/dates'
+import { useToday } from '@/lib/useToday'
 import { dayMetrics, fmtNum, isLogged, plateBalance, summarize, weeklyExercise, type DayMetrics } from '@/lib/stats'
 import { computeInsights } from '@/lib/insights'
 import { ChartCard, KpiTile, Legend, Tip, useChartColors } from './chartKit'
@@ -19,7 +20,7 @@ const PERIODS = [
 
 export function Dashboard() {
   const [period, setPeriod] = useState(30)
-  const today = todayISO()
+  const today = useToday()
   const loadFrom = shiftISO(today, -179)
   const q = useDays(loadFrom, today)
   const profile = useProfileOrDefault()

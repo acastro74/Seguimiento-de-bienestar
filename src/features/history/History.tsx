@@ -3,12 +3,13 @@ import { Link } from 'react-router-dom'
 import { addMonths, endOfMonth, getISODay, startOfMonth } from 'date-fns'
 import { useDays } from '@/data/hooks'
 import { cx } from '@/components/ui'
-import { fmt, fromISO, shiftISO, toISO, todayISO } from '@/lib/dates'
+import { fmt, fromISO, shiftISO, toISO } from '@/lib/dates'
+import { useToday } from '@/lib/useToday'
 import { dayMetrics, fmtNum, isLogged } from '@/lib/stats'
 import { AREA } from '@/components/ui'
 
 export function History() {
-  const today = todayISO()
+  const today = useToday()
   const [month, setMonth] = useState(() => toISO(startOfMonth(new Date())))
   const first = month
   const last = toISO(endOfMonth(fromISO(month)))
@@ -17,7 +18,7 @@ export function History() {
   const lead = getISODay(fromISO(first)) - 1
   const cells: (string | null)[] = [...Array(lead).fill(null)]
   for (let d = first; d <= last; d = shiftISO(d, 1)) cells.push(d)
-  const isCurrent = month === toISO(startOfMonth(new Date()))
+  const isCurrent = month === toISO(startOfMonth(fromISO(today)))
 
   const logged = [...byDate.values()].map(dayMetrics)
   const avg = (k: 'mood' | 'sleepH') => {

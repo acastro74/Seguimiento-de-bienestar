@@ -13,6 +13,8 @@ export interface Repo {
   deleteMedication(id: string): Promise<void>
   getDay(date: ISODate): Promise<DayEntry | null>
   saveDay(d: DayEntry): Promise<void>
+  /** Guarda varios días de una vez (importar respaldo) */
+  saveDays(days: DayEntry[]): Promise<void>
   /** Días con registro entre `from` y `to` (incluidas) */
   listDays(from: ISODate, to: ISODate): Promise<DayEntry[]>
   /** Último registro anterior a `date` (para pre-llenar horas de sueño) */
