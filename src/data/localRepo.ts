@@ -2,9 +2,9 @@ import type { Repo } from './repo'
 import type { DayEntry, Habit, ISODate, Medication, Profile } from './types'
 import { emptyDay } from './defaults'
 
-const KEY = 'bitacora-demo-v1'
+export const DEMO_STORAGE_KEY = 'bitacora-demo-v1'
 
-interface Store {
+export interface Store {
   profile: Profile | null
   habits: Habit[]
   medications: Medication[]
@@ -13,91 +13,121 @@ interface Store {
 
 const blank = (): Store => ({ profile: null, habits: [], medications: [], days: {} })
 
-/** Modo demo: todo se guarda en localStorage de este navegador. */
+/**
+ * Modo demo: todo se guarda en localStorage de este navegador.
+ *
+ * Cada operación lee el almacenamiento en ese momento y modifica solo lo que cambia,
+ * así dos pestañas (o la app instalada y una pestaña) no se pisan entre sí.
+ */
 export class LocalRepo implements Repo {
   readonly mode = 'demo' as const
-  private mem: Store | null = null
+  /** Respaldo en memoria solo si localStorage no está disponible */
+  private fallback: Store | null = null
 
-  private load(): Store {
-    if (this.mem) return this.mem
+  constructor(private storage: Storage | null = typeof localStorage !== 'undefined' ? localStorage : null) {}
+
+  private read(): Store {
+    if (this.fallback) return this.fallback
     try {
-      const raw = localStorage.getItem(KEY)
-      this.mem = raw ? { ...blank(), ...JSON.parse(raw) } : blank()
+      const raw = this.storage?.getItem(DEMO_STORAGE_KEY)
+      return raw ? { ...blank(), ...JSON.parse(raw) } : blank()
     } catch {
-      this.mem = blank()
+      return (this.fallback = blank())
     }
-    return this.mem!
   }
 
-  private persist() {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(this.mem))
-    } catch {
-      /* almacenamiento no disponible: se mantiene en memoria */
+  private write(s: Store) {
+    if (this.fallback) {
+      this.fallback = s
+      return
     }
+    try {
+      if (!this.storage) throw new Error('sin storage')
+      this.storage.setItem(DEMO_STORAGE_KEY, JSON.stringify(s))
+    } catch {
+      this.fallback = s
+    }
+  }
+
+  /** Lee, aplica el cambio y escribe en un solo paso. */
+  private mutate(fn: (s: Store) => void) {
+    const s = this.read()
+    fn(s)
+    this.write(s)
   }
 
   replaceAll(s: Store) {
-    this.mem = s
-    this.persist()
+    this.write(s)
   }
 
   reset() {
-    this.mem = blank()
-    this.persist()
+    this.write(blank())
+  }
+
+  countDays() {
+    return Object.keys(this.read().days).length
   }
 
   async getProfile() {
-    return this.load().profile
+    return this.read().profile
   }
   async saveProfile(p: Profile) {
-    this.load().profile = p
-    this.persist()
+    this.mutate((s) => {
+      s.profile = p
+    })
   }
   async listHabits() {
-    return [...this.load().habits].sort((a, b) => a.sort - b.sort)
+    return [...this.read().habits].sort((a, b) => a.sort - b.sort)
   }
   async saveHabit(h: Habit) {
-    const s = this.load()
-    s.habits = [...s.habits.filter((x) => x.id !== h.id), h]
-    this.persist()
+    this.mutate((s) => {
+      s.habits = [...s.habits.filter((x) => x.id !== h.id), h]
+    })
   }
   async deleteHabit(id: string) {
-    const s = this.load()
-    s.habits = s.habits.filter((x) => x.id !== id)
-    this.persist()
+    this.mutate((s) => {
+      s.habits = s.habits.filter((x) => x.id !== id)
+    })
   }
   async listMedications() {
-    return [...this.load().medications]
+    return [...this.read().medications]
   }
   async saveMedication(m: Medication) {
-    const s = this.load()
-    s.medications = [...s.medications.filter((x) => x.id !== m.id), m]
-    this.persist()
+    this.mutate((s) => {
+      s.medications = [...s.medications.filter((x) => x.id !== m.id), m]
+    })
   }
   async deleteMedication(id: string) {
-    const s = this.load()
-    s.medications = s.medications.filter((x) => x.id !== id)
-    this.persist()
+    this.mutate((s) => {
+      s.medications = s.medications.filter((x) => x.id !== id)
+    })
   }
   async getDay(date: ISODate) {
-    const d = this.load().days[date]
+    const d = this.read().days[date]
     return d ? { ...emptyDay(date), ...d } : null
   }
   async saveDay(d: DayEntry) {
-    this.load().days[d.date] = d
-    this.persist()
+    this.mutate((s) => {
+      s.days[d.date] = d
+    })
+  }
+  async saveDays(days: DayEntry[]) {
+    this.mutate((s) => {
+      for (const d of days) s.days[d.date] = d
+    })
   }
   async listDays(from: ISODate, to: ISODate) {
-    return Object.values(this.load().days)
+    return Object.values(this.read().days)
       .filter((d) => d.date >= from && d.date <= to)
+      .map((d) => ({ ...emptyDay(d.date), ...d }))
       .sort((a, b) => a.date.localeCompare(b.date))
   }
   async previousDay(date: ISODate) {
-    const prev = Object.keys(this.load().days)
+    const days = this.read().days
+    const prev = Object.keys(days)
       .filter((d) => d < date)
       .sort()
       .pop()
-    return prev ? this.load().days[prev] : null
+    return prev ? { ...emptyDay(prev), ...days[prev] } : null
   }
 }

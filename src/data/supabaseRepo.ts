@@ -160,6 +160,11 @@ export class SupabaseRepo implements Repo {
   async saveDay(d: DayEntry) {
     check(await this.sb.from('day_logs').upsert(dayToRow(d, this.userId)))
   }
+  async saveDays(days: DayEntry[]) {
+    for (let i = 0; i < days.length; i += 200) {
+      check(await this.sb.from('day_logs').upsert(days.slice(i, i + 200).map((d) => dayToRow(d, this.userId))))
+    }
+  }
   async listDays(from: ISODate, to: ISODate) {
     const rows = check(await this.sb.from('day_logs').select('*').gte('date', from).lte('date', to).order('date'))
     return (rows ?? []).map(rowToDay)
